@@ -1,40 +1,40 @@
-"""
-Genomic Overlap Analysis for Predicted smORFs
-
-This script uses the predicted 557 candidate smORFs identified and checks 
-their genomic coordinates against the M. tuberculosis H37Rv reference 
-annotation (mycobact.gff)
-Outputs:
-1. smorf_gene_overlap_results.csv  (Tabular summary of all 557 smORFs)
-2. overlapping_smORFs.fasta        (FASTA sequences that overlap known genes)
-3. unannotated_smORFs.fasta        (FASTA sequences with no overlapping genes)
-"""
-
 import re
 import pandas as pd
 import os
 from datetime import datetime
 
-def main():
-    # File paths
-    gff_file = "mycobact.gff"
-    fasta_file = "mtb_predicted_smORFs.fasta"
-    
-    if not os.path.exists(gff_file) or not os.path.exists(fasta_file):
-        print(f"Error: Make sure {gff_file} and {fasta_file} are in the current directory.")
-        return
+"""
+Genomic Overlap Analysis for Predicted smORFs
+=============================================
 
-    # 1. Load reference GFF
+This script evaluates the 557 smORFs predicted to determine how many overlap with 
+annotated protein-coding genes in the M. tuberculosis H37Rv reference genome.
+
+Input files:
+  - mtb_predicted_smORFs.fasta : Contains the 557 smORF sequences and coordinates.
+  - mycobact.gff               : The NCBI reference annotation for NC_000962.3.
+
+Output files:
+  - smorf_gene_overlap_results.csv : Table of all 557 smORFs and their overlap status.
+  - overlapping_smORFs.fasta       : Subset of sequences overlapping annotated genes.
+  - unannotated_smORFs.fasta       : Subset of sequences with no gene overlap.
+"""
+
+def run_overlap_analysis(gff_file="mycobact.gff", fasta_file="mtb_predicted_smORFs.fasta"):
+    # Check for required inputs
+    if not os.path.exists(gff_file) or not os.path.exists(fasta_file):
+        raise FileNotFoundError(f"Missing input files. Ensure {gff_file} and {fasta_file} are in the directory.")
+
     print("Loading reference GFF...")
     genes = pd.read_csv(gff_file, sep="\t", comment="#", 
                         names=["seqid", "source", "type", "start", "end", "score", "strand", "phase", "attributes"])
-    # Keep only annotated 'gene' features
+    
+    # Filter for annotated 'gene' features only to avoid double-counting exons/CDS
     genes = genes[genes["type"] == "gene"]
     print(f"Loaded {len(genes)} annotated genes.")
 
-    # 2. Parse FASTA and check overlaps
-    print("\nParsing FASTA headers...")
-    # Regex expects headers like: >mtb_smORF3_33964_34218_+
+    print("Parsing FASTA and checking overlaps...")
+    # Regex matches headers formatted as >mtb_smORF1_10966_11121_+
     pattern = re.compile(r">(mtb_smORF\d+)_(\d+)_(\d+)_([+-])") 
 
     csv_results = []
@@ -49,9 +49,8 @@ def main():
         for line in f:
             line = line.strip()
             if line.startswith(">"):
-                # Process the previous record before starting the new one
+                # Process the previous sequence before starting the new header
                 if current_header:
-                    # Check overlap
                     overlaps = (genes["start"] <= prev_end) & (genes["end"] >= prev_start)
                     status = "Overlapping" if overlaps.any() else "Non-overlapping"
                     
@@ -68,7 +67,7 @@ def main():
                     else:
                         unannotated_records.append((current_header, "".join(current_seq)))
 
-                # Start new record
+                # Start parsing the new header
                 current_header = line
                 current_seq = []
                 
@@ -81,7 +80,7 @@ def main():
             else:
                 current_seq.append(line)
 
-        # Process the very last record in the file
+        # Process the final sequence in the file
         if current_header and current_seq:
             overlaps = (genes["start"] <= prev_end) & (genes["end"] >= prev_start)
             status = "Overlapping" if overlaps.any() else "Non-overlapping"
@@ -99,7 +98,7 @@ def main():
             else:
                 unannotated_records.append((current_header, "".join(current_seq)))
 
-    # 3. Calculate statistics
+    # Calculate summary statistics
     X = len(overlapping_records)
     Z = len(unannotated_records)
     total = X + Z
@@ -107,27 +106,28 @@ def main():
     W = (Z / total) * 100 if total > 0 else 0
 
     print("\n" + "="*40)
-    print("=== OVERLAP ANALYSIS RESULTS ===")
+    print("OVERLAP ANALYSIS RESULTS")
     print("="*40)
-    print(f"Total smORFs parsed:          {total}")
+    print(f"Total smORFs:                 {total}")
     print(f"Overlapping annotated genes:  {X} ({Y:.1f}%)")
     print(f"Unannotated (no gene overlap): {Z} ({W:.1f}%)")
     print("="*40 + "\n")
 
-    # 4. Save to CSV (Comma-separated for Excel)
+    # Save results to CSV (comma-separated for Excel compatibility)
     csv_filename = "smorf_gene_overlap_results.csv"
     df_results = pd.DataFrame(csv_results)
-    
+
     try:
         df_results.to_csv(csv_filename, sep=",", index=False)
         print(f"Saved: {csv_filename}")
     except PermissionError:
+        # Fallback if the file is currently open in Excel
         timestamp = datetime.now().strftime("%H%M%S")
         csv_filename = f"smorf_gene_overlap_results_{timestamp}.csv"
         df_results.to_csv(csv_filename, sep=",", index=False)
-        print(f"Original file open in Excel. Saved as: {csv_filename}")
+        print(f"File open in Excel. Saved as: {csv_filename}")
 
-    # 5. Save FASTA files
+    # Save the separated FASTA files
     with open("overlapping_smORFs.fasta", "w") as f:
         for h, s in overlapping_records:
             f.write(f"{h}\n{s}\n")
@@ -139,4 +139,4 @@ def main():
     print("Saved: unannotated_smORFs.fasta")
 
 if __name__ == "__main__":
-    main()
+    run_overlap_analysis()
