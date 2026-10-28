@@ -1,10 +1,9 @@
 """
 Genomic Overlap Analysis for Predicted smORFs
-=============================================
 
-This script takes the 557 predicted smORFs (from ORFipy) and checks their 
-coordinates against the M. tuberculosis H37Rv reference annotation (mycobact.gff).
-
+This script uses the predicted 557 candidate smORFs identified and checks 
+their genomic coordinates against the M. tuberculosis H37Rv reference 
+annotation (mycobact.gff)
 Outputs:
 1. smorf_gene_overlap_results.csv  (Tabular summary of all 557 smORFs)
 2. overlapping_smORFs.fasta        (FASTA sequences that overlap known genes)
