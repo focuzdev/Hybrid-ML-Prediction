@@ -30,7 +30,18 @@ This repository contains supplementary materials and computational workflows sup
 
 ---
 
-### 2. Transcriptome Analysis Pipeline
+### 2. Genomic Overlap Analysis
+
+* **`genomic_overlap_analysis/`**
+  Scripts and results evaluating how many of the 557 predicted smORFs overlap with annotated genes in the *M. tuberculosis* H37Rv reference genome.
+  * `compute_overlap.py`: Script to run the coordinate intersection analysis.
+  * `smorf_gene_overlap_results.csv`: Output table of overlap status for all 557 smORFs.
+  * `overlapping_smORFs.fasta`: Subset of smORFs that overlap annotated genes.
+  * `unannotated_smORFs.fasta`: Subset of smORFs located in unannotated regions.
+
+---
+
+### 3. Transcriptome Analysis Pipeline
 
 * `transcriptome_pipeline/`
   RNA-seq workflow used in this study
@@ -70,5 +81,5 @@ Ensure the following tools are installed:
 ## Data Availability
 
 Transcriptome raw data is available at:
-[Zenodo (DOI: 10.5281/zenodo.21390230)](https://doi.org/10.5281/zenodo.21390230)
+[Zenodo (DOI: 10.5281/zenodo.21390230)](https://doi.org/10.5281/zenodo.23452744) 
 ---
