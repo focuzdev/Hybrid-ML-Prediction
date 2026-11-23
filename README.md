@@ -4,7 +4,7 @@ This repository contains supplementary materials and computational workflows sup
 
 ---
 
-## Repository Structure
+## Repository Structure.
 
 ### 1. Machine Learning and Supplementary Data
 
